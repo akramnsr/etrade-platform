@@ -38,18 +38,30 @@ public class DocumentService {
 
     @Transactional
     public Document upload(UUID demandId, MultipartFile file, String documentType) throws IOException {
-        Path uploadDir = Paths.get(storagePath, demandId.toString());
+        String originalFilename = sanitizeFilename(file.getOriginalFilename());
+
+        Path uploadDir = Paths.get(storagePath).resolve(demandId.toString()).normalize();
+        // Ensure the upload directory is within the configured storage path
+        Path baseStoragePath = Paths.get(storagePath).toAbsolutePath().normalize();
+        if (!uploadDir.toAbsolutePath().normalize().startsWith(baseStoragePath)) {
+            throw new SecurityException("Invalid upload directory");
+        }
         Files.createDirectories(uploadDir);
 
-        String originalFilename = file.getOriginalFilename();
         String storedFilename = UUID.randomUUID() + "_" + originalFilename;
-        Path filePath = uploadDir.resolve(storedFilename);
+        Path filePath = uploadDir.resolve(storedFilename).normalize();
+
+        // Prevent path traversal: ensure the resolved file path is inside upload directory
+        if (!filePath.toAbsolutePath().normalize().startsWith(uploadDir.toAbsolutePath().normalize())) {
+            throw new SecurityException("Invalid file path");
+        }
+
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         Document document = Document.builder()
             .demandId(demandId)
             .filename(originalFilename)
-            .filePath(filePath.toString())
+            .filePath(filePath.toAbsolutePath().toString())
             .documentType(documentType)
             .fileSize(file.getSize())
             .contentType(file.getContentType())
@@ -63,7 +75,12 @@ public class DocumentService {
     public Resource download(UUID id) {
         Document document = findById(id);
         try {
-            Path filePath = Paths.get(document.getFilePath());
+            Path filePath = Paths.get(document.getFilePath()).normalize();
+            // Ensure the file is within the configured storage path
+            Path baseStoragePath = Paths.get(storagePath).toAbsolutePath().normalize();
+            if (!filePath.toAbsolutePath().normalize().startsWith(baseStoragePath)) {
+                throw new ResourceNotFoundException("File access not permitted: " + document.getFilename());
+            }
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return resource;
@@ -78,12 +95,26 @@ public class DocumentService {
     public void delete(UUID id) {
         Document document = findById(id);
         try {
-            Path filePath = Paths.get(document.getFilePath());
-            Files.deleteIfExists(filePath);
+            Path filePath = Paths.get(document.getFilePath()).normalize();
+            Path baseStoragePath = Paths.get(storagePath).toAbsolutePath().normalize();
+            if (filePath.toAbsolutePath().normalize().startsWith(baseStoragePath)) {
+                Files.deleteIfExists(filePath);
+            }
         } catch (IOException e) {
             log.warn("Could not delete file: {}", document.getFilePath());
         }
         documentRepository.deleteById(id);
         log.info("Deleted document with id: {}", id);
+    }
+
+    private String sanitizeFilename(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return UUID.randomUUID() + ".bin";
+        }
+        // Remove path separators and null bytes, keep only the file name
+        String name = Paths.get(filename).getFileName().toString();
+        // Replace any remaining suspicious characters
+        name = name.replaceAll("[^a-zA-Z0-9.\\-_]", "_");
+        return name.isBlank() ? UUID.randomUUID() + ".bin" : name;
     }
 }
