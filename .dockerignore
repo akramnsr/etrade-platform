@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.npm
+
+# Build output
+target
+dist
+build
+.next
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Test coverage
+coverage
+.nyc_output
+
+# Docker
+Dockerfile
+docker-compose*.yml
