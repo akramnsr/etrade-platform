@@ -51,7 +51,7 @@ public class DocumentService {
         Document document = Document.builder()
             .demand(demand)
             .filename(storedFilename)
-            .originalFilename(file.getOriginalFilename())
+            .originalFilename(sanitizedOriginalFilename)
             .contentType(file.getContentType())
             .size(file.getSize())
             .storagePath(storagePath)
