@@ -1,0 +1,91 @@
+{
+  "realm": "etrade",
+  "enabled": true,
+  "displayName": "eTrade Platform",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "sslRequired": "external",
+  "roles": {
+    "realm": [
+      { "name": "EXPORTATOR", "description": "Trade exportator role" },
+      { "name": "BANK_AGENT", "description": "Bank agent role" },
+      { "name": "ADMIN", "description": "Administrator role" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "etrade-frontend",
+      "name": "eTrade Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5173"
+      ],
+      "protocolMappers": [
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "etrade-backend",
+      "name": "eTrade Backend",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "etrade-backend-secret"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@etrade.portnet.com",
+      "firstName": "System",
+      "lastName": "Admin",
+      "credentials": [{ "type": "password", "value": "admin123", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "exportator1",
+      "enabled": true,
+      "email": "exportator1@example.com",
+      "firstName": "John",
+      "lastName": "Exportator",
+      "credentials": [{ "type": "password", "value": "password123", "temporary": false }],
+      "realmRoles": ["EXPORTATOR"]
+    },
+    {
+      "username": "bankagent1",
+      "enabled": true,
+      "email": "bankagent1@bank.com",
+      "firstName": "Jane",
+      "lastName": "BankAgent",
+      "credentials": [{ "type": "password", "value": "password123", "temporary": false }],
+      "realmRoles": ["BANK_AGENT"]
+    }
+  ]
+}
