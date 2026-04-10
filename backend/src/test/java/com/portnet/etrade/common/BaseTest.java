@@ -11,7 +11,7 @@ import org.springframework.test.context.TestPropertySource;
     "spring.datasource.driver-class-name=com.h2database.Driver",
     "spring.jpa.hibernate.ddl-auto=create-drop",
     "spring.flyway.enabled=false",
-    "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+    "spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8180/realms/etrade",
     "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:8180/realms/etrade/protocol/openid-connect/certs"
 })
 public abstract class BaseTest {

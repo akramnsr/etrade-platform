@@ -21,6 +21,19 @@ public class DecisionService {
     private final DecisionRepository decisionRepository;
     private final DemandRepository demandRepository;
 
+    // Scoring thresholds
+    private static final BigDecimal SCORE_LOW_RISK_THRESHOLD = BigDecimal.valueOf(80);
+    private static final BigDecimal SCORE_MEDIUM_RISK_THRESHOLD = BigDecimal.valueOf(60);
+    private static final BigDecimal SCORE_HIGH_RISK_THRESHOLD = BigDecimal.valueOf(40);
+    private static final BigDecimal SCORE_AUTO_APPROVE_THRESHOLD = BigDecimal.valueOf(70);
+    private static final BigDecimal SCORE_MANUAL_REVIEW_THRESHOLD = BigDecimal.valueOf(50);
+
+    // Scoring parameters
+    private static final BigDecimal BASE_SCORE = BigDecimal.valueOf(70);
+    private static final BigDecimal SMALL_AMOUNT_BONUS = BigDecimal.valueOf(20);
+    /** Demands below this amount receive a bonus score (lower risk). */
+    private static final BigDecimal SMALL_AMOUNT_THRESHOLD = BigDecimal.valueOf(100_000);
+
     @Transactional(readOnly = true)
     public DecisionDTO getDecisionByDemand(Long demandId) {
         return toDTO(decisionRepository.findByDemandId(demandId)
@@ -87,24 +100,23 @@ public class DecisionService {
     }
 
     private BigDecimal calculateScore(Demand demand) {
-        // Simplified scoring: based on amount and currency
-        BigDecimal baseScore = BigDecimal.valueOf(70);
-        if (demand.getAmount().compareTo(BigDecimal.valueOf(100000)) < 0) {
-            baseScore = baseScore.add(BigDecimal.valueOf(20));
+        BigDecimal score = BASE_SCORE;
+        if (demand.getAmount().compareTo(SMALL_AMOUNT_THRESHOLD) < 0) {
+            score = score.add(SMALL_AMOUNT_BONUS);
         }
-        return baseScore;
+        return score;
     }
 
     private Decision.RiskLevel determineRiskLevel(BigDecimal score) {
-        if (score.compareTo(BigDecimal.valueOf(80)) >= 0) return Decision.RiskLevel.LOW;
-        if (score.compareTo(BigDecimal.valueOf(60)) >= 0) return Decision.RiskLevel.MEDIUM;
-        if (score.compareTo(BigDecimal.valueOf(40)) >= 0) return Decision.RiskLevel.HIGH;
+        if (score.compareTo(SCORE_LOW_RISK_THRESHOLD) >= 0) return Decision.RiskLevel.LOW;
+        if (score.compareTo(SCORE_MEDIUM_RISK_THRESHOLD) >= 0) return Decision.RiskLevel.MEDIUM;
+        if (score.compareTo(SCORE_HIGH_RISK_THRESHOLD) >= 0) return Decision.RiskLevel.HIGH;
         return Decision.RiskLevel.VERY_HIGH;
     }
 
     private Decision.DecisionResult determineResult(BigDecimal score) {
-        if (score.compareTo(BigDecimal.valueOf(70)) >= 0) return Decision.DecisionResult.APPROVED;
-        if (score.compareTo(BigDecimal.valueOf(50)) >= 0) return Decision.DecisionResult.MANUAL_REVIEW;
+        if (score.compareTo(SCORE_AUTO_APPROVE_THRESHOLD) >= 0) return Decision.DecisionResult.APPROVED;
+        if (score.compareTo(SCORE_MANUAL_REVIEW_THRESHOLD) >= 0) return Decision.DecisionResult.MANUAL_REVIEW;
         return Decision.DecisionResult.REJECTED;
     }
 

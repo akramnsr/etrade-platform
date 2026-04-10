@@ -42,8 +42,10 @@ public class DocumentService {
         Demand demand = demandRepository.findById(demandId)
             .orElseThrow(() -> ApiException.notFound("Demand not found with id: " + demandId));
 
-        String storedFilename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        // In production, upload to cloud storage (S3, Azure Blob, etc.)
+        // Sanitize original filename to prevent path traversal
+        String sanitizedOriginalFilename = sanitizeFilename(file.getOriginalFilename());
+        String storedFilename = UUID.randomUUID() + "_" + sanitizedOriginalFilename;
+        // TODO: In production, upload to cloud storage (S3, Azure Blob, etc.)
         String storagePath = "/uploads/" + storedFilename;
 
         Document document = Document.builder()
@@ -58,7 +60,7 @@ public class DocumentService {
             .build();
 
         Document saved = documentRepository.save(document);
-        log.info("Uploaded document: {} for demand: {}", file.getOriginalFilename(), demand.getReference());
+        log.info("Uploaded document: {} for demand: {}", sanitizedOriginalFilename, demand.getReference());
         return toDTO(saved);
     }
 
@@ -68,6 +70,14 @@ public class DocumentService {
             throw ApiException.notFound("Document not found with id: " + id);
         }
         documentRepository.deleteById(id);
+    }
+
+    /** Removes characters that could enable path traversal or file system attacks. */
+    private String sanitizeFilename(String filename) {
+        if (filename == null) {
+            return "unknown";
+        }
+        return filename.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     private DocumentDTO toDTO(Document document) {
