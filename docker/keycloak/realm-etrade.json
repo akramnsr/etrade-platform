@@ -1,0 +1,61 @@
+{
+  "realm": "etrade",
+  "enabled": true,
+  "displayName": "eTrade Platform",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {"name": "ADMIN", "description": "Platform Administrator"},
+      {"name": "BANK_OFFICER", "description": "Bank Officer"},
+      {"name": "EXPORTER", "description": "Exporter/Trader"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "etrade-frontend",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*", "https://etrade.portnet.ma/*"],
+      "webOrigins": ["http://localhost:3000", "https://etrade.portnet.ma"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "etrade-backend",
+      "enabled": true,
+      "bearerOnly": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@portnet.ma",
+      "firstName": "Admin",
+      "lastName": "PORTNET",
+      "credentials": [{"type": "password", "value": "admin123", "temporary": false}],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "banker",
+      "enabled": true,
+      "email": "banker@portnet.ma",
+      "firstName": "Bank",
+      "lastName": "Officer",
+      "credentials": [{"type": "password", "value": "banker123", "temporary": false}],
+      "realmRoles": ["BANK_OFFICER"]
+    },
+    {
+      "username": "exporter",
+      "enabled": true,
+      "email": "exporter@company.ma",
+      "firstName": "Export",
+      "lastName": "Company",
+      "credentials": [{"type": "password", "value": "exporter123", "temporary": false}],
+      "realmRoles": ["EXPORTER"]
+    }
+  ]
+}

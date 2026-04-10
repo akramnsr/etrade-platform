@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    show-sql: false
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+server:
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+
+logging:
+  level:
+    com.portnet.etrade: WARN
+    root: ERROR

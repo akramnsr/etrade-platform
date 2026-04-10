@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  postgres:
+    build: ./docker/postgres
+    container_name: etrade-postgres
+    environment:
+      POSTGRES_DB: etrade_db
+      POSTGRES_USER: etrade_user
+      POSTGRES_PASSWORD: etrade_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U etrade_user -d etrade_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - etrade-network
+
+  keycloak:
+    build: ./docker/keycloak
+    container_name: etrade-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/etrade_db
+      KC_DB_USERNAME: etrade_user
+      KC_DB_PASSWORD: etrade_password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - etrade-network
+
+  backend:
+    build: ./backend
+    container_name: etrade-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/etrade_db
+      DB_USERNAME: etrade_user
+      DB_PASSWORD: etrade_password
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/etrade
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/etrade/protocol/openid-connect/certs
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - etrade-network
+
+  frontend:
+    build: ./frontend
+    container_name: etrade-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - etrade-network
+
+  nginx:
+    build: ./docker/nginx
+    container_name: etrade-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - etrade-network
+
+volumes:
+  postgres_data:
+
+networks:
+  etrade-network:
+    driver: bridge
